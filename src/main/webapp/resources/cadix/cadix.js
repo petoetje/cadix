@@ -1,12 +1,13 @@
 
 var cadixRoots = new WeakMap; // map DOM element to cadixRoot. When DOM element is deleted, map is cleaned
 
+const NOELEM = "noelem";
 
 class CadixEntry {
     constructor() {
         this.children = new Array();//ids
-        this.props = new Object();
-        this.reactElement = null;
+        this.reactProps = new Object();
+        this.reactElement = NOELEM;
         this.oldchildren = new Array(); //ids of previous render
     }
 
@@ -48,7 +49,7 @@ function cadixCreateComp(myId, parentId, rootId) {
 
             cadixTree.cadixRoot = cadixEntry;
             //also store in Map (because children look me up)
-            cadixTree.cadixMap.set(myId, CadixEntry);
+            cadixTree.cadixMap.set(myId, cadixEntry);
             //TODO : properties
             //where to store cadixTree...
             cadixRoots.set(cadixElement, cadixTree);
@@ -62,16 +63,18 @@ function cadixCreateComp(myId, parentId, rootId) {
 
     var cadixEntry = cadixTree.cadixMap.get(myId);
     if (cadixEntry) {
-        //keep track of old children, to be able to remove them
-        cadixEntry.oldchildren = Array.from(cadixEntry.children);
-        cadixEntry.children = new Array();
+        if (cadixEntry.children) {
+            //keep track of old children, to be able to remove them
+            cadixEntry.oldchildren = Array.from(cadixEntry.children);
+            cadixEntry.children = new Array();
+        }
 
     } else {
         cadixEntry = new CadixEntry();
         cadixTree.cadixMap.set(myId, cadixEntry);
     }
 
-    //cadixEntry.props = ...;
+    //cadixEntry.reactProps = ...;
 
     //if parent is in map,a dd myself to children
     if (cadixTree.cadixMap.has(parentId)) {
@@ -97,15 +100,17 @@ function cadixActivateComp(myId, parentId, rootId) {
     var cadixTree = cadixRoots.get(cadixRootElement);
     var cadixEntry = cadixTree.cadixMap.get(myId);
     var wasCreated = false;
-    if (cadixEntry.reactElement === null) {
+    if (cadixEntry.reactElement === NOELEM) {
         //create react component
         createReactElement(cadixEntry);
         wasCreated = true;
     } else {
+        console.log("Id:"+myId+" has a react element:"+cadixEntry.reactElement);
         //compare children
     }
     //if root is created, then render !
     if (myId === rootId && wasCreated) {
+        console.log("Render time");
         ReactDOM.render(cadixEntry.reactElement, cadixRootElement);
     }
 
@@ -113,12 +118,13 @@ function cadixActivateComp(myId, parentId, rootId) {
 
 //create the React component for the cadixEntry
 function createReactElement(cadixEntry) {
+    console.log("createReactElement");
     //when this function is called, all children will aready have a React comp,
     //because the same function was called by JSF before, in order children before parents
-    var reactChildren = array();
+    var reactChildren = new Array();
     if (cadixEntry.children) {
         cadixEntry.children.forEach(ce => reactChildren.push(ce.reactElement));
     }
     //when we arrive here, we assume children aleady have react Ids
-    cadixEntry.reactElement = React.createElement(div, null, reactChildren);
+    cadixEntry.reactElement = React.createElement("div", null, reactChildren);
 }
