@@ -3,13 +3,16 @@ var cadixRoots = new WeakMap; // map DOM element to cadixRoot. When DOM element 
 
 const NOELEM = "noelem";
 const NOKEY = "nokey";
+const NOELEMENTTYPE = "CadixForgotReactElementTypeAttribute";
 
 class CadixEntry {
     constructor() {
-        this.children = new Array();//ids
+        this.children = new Map();//ids->text or null, which means react element
         this.reactProps = new Object();
         this.reactElement = NOELEM;
+        this.reactElementType = NOELEMENTTYPE;
         this.reactKey = NOKEY;
+
 
     }
 
@@ -29,8 +32,8 @@ class CadixTree {
 
 
 
-function cadixCreateComp(myId, parentId, rootId, props) {
-    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + "props:" + props);
+function cadixCreateComp(myId, parentId, rootId, props, reactElementType, children) {
+    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + " props:" + props + " children:" + children);
     var jsfElement = document.getElementById(myId);
     //if I am root, I need to create the React mount point and Cadix map, if not yet done
     if (rootId === myId) {
@@ -76,12 +79,20 @@ function cadixCreateComp(myId, parentId, rootId, props) {
     if (props !== null) {
         cadixEntry.reactProps = JSON.parse(props);
     }
-
-    //if parent is in map,a dd myself to children
-    var parentJsf = jsfElement.parentNode;
-    if (cadixTree.cadixMap.has(parentJsf)) {
-        cadixTree.cadixMap.get(parentJsf).children.push(myId);
+    cadixEntry.reactElementType = reactElementType;
+    //children stored in Map with fixed key order
+    var oChildren = JSON.parse(children);
+    var childMap = new Map();
+    for (var value in oChildren) {
+        console.log("key:"+value+ "/// value:"+oChildren[value]);
+        childMap.set(value, oChildren[value]);
     }
+    cadixEntry.children = childMap;
+    //also add our DOM input element (which is used by JSF) 
+    //you can find the Form from there by element.form;
+    cadixEntry.reactProps.jsfinput = document.getElementById(myId + "-input");
+
+
 
 
 
@@ -129,11 +140,20 @@ function createReactElement(cadixEntry, cadixTree) {
     //because the same function was called by JSF before, in order children before parents
     var reactChildren = new Array();
     if (cadixEntry.children) {
-        cadixEntry.children.forEach(ce => reactChildren.push(cadixTree.cadixMap.get(document.getElementById(ce)).reactElement));
+        //attn : first value, then key
+        cadixEntry.children.forEach((value,ce) => {
+            if (value) {
+                reactChildren.push(value);
+            } else {
+                reactChildren.push(cadixTree.cadixMap.get(document.getElementById(ce)).reactElement);
+            }
+        });
     }
     //when we arrive here, we assume children aleady have react Ids
     //make sure key is set
     cadixEntry.reactProps.key = cadixEntry.reactKey;
-    cadixEntry.reactElement = React.createElement("div", cadixEntry.reactProps, reactChildren);
+
+    cadixEntry.reactElement = React.createElement(cadixEntry.reactElementType, cadixEntry.reactProps, reactChildren);
+
 }
 

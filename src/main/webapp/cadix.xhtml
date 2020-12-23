@@ -3,19 +3,28 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:comp="http://xmlns.jcp.org/jsf/component"
-      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
       xmlns:f="http://xmlns.jcp.org/jsf/core">
     <h:head>
         <title>Facelet Title</title>
         <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
         <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
         <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/react-bootstrap@next/dist/react-bootstrap.min.js"></script>
+        <link   rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+                />
     </h:head>
     <h:body>
+
         Hello from Facelets
         <h:form>
             <comp:cadix id="cd">
-                <comp:cadix id="cdinner" pt:christo="test"/>
+                <comp:cadix id="cdinner" react_elementtype="ReactBootstrap.Container" react_className="p-3" react_betty="toast" value="aha">
+                    <comp:cadix  react_elementtype="ReactBootstrap.Jumbotron">
+                        <comp:cadix  react_elementtype="h1" className="header">
+                            TEST
+                        </comp:cadix>
+                    </comp:cadix>
+                </comp:cadix>
             </comp:cadix>
             <h:commandButton>
                 <f:ajax render="cd"/>
