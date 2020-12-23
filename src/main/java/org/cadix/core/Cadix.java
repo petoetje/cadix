@@ -22,6 +22,13 @@ import javax.faces.context.FacesContext;
 @FacesComponent(createTag = true, tagName = "cadix")
 public class Cadix extends UIInput {
 
+    @Override
+    public boolean getRendersChildren() {
+        return Boolean.FALSE;
+    }
+    
+    
+
     // 1. Check if I am a Cadix root. If not, find my root.  If not found, then become a root
     //  If I am a root, then check if the datastructure "cadixmap" is below my data node. Create if needed
     // root -> create dom node if needed

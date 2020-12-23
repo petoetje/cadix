@@ -14,7 +14,9 @@
     <h:body>
         Hello from Facelets
         <h:form>
-            <comp:cadix id="cd"/>
+            <comp:cadix id="cd">
+                <comp:cadix id="cdinner"/>
+            </comp:cadix>
             <h:commandButton>
                 <f:ajax render="cd"/>
             </h:commandButton>
