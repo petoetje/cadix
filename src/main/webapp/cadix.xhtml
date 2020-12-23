@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:comp="http://xmlns.jcp.org/jsf/component"
-
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
       xmlns:f="http://xmlns.jcp.org/jsf/core">
     <h:head>
         <title>Facelet Title</title>
@@ -15,7 +15,7 @@
         Hello from Facelets
         <h:form>
             <comp:cadix id="cd">
-                <comp:cadix id="cdinner"/>
+                <comp:cadix id="cdinner" pt:christo="test"/>
             </comp:cadix>
             <h:commandButton>
                 <f:ajax render="cd"/>

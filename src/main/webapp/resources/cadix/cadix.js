@@ -10,7 +10,7 @@ class CadixEntry {
         this.reactProps = new Object();
         this.reactElement = NOELEM;
         this.reactKey = NOKEY;
-       
+
     }
 
 }
@@ -29,23 +29,23 @@ class CadixTree {
 
 
 
-function cadixCreateComp(myId, parentId, rootId) {
-    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId);
+function cadixCreateComp(myId, parentId, rootId, props) {
+    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + "props:" + props);
     var jsfElement = document.getElementById(myId);
     //if I am root, I need to create the React mount point and Cadix map, if not yet done
     if (rootId === myId) {
 
         console.log("Cadix check root");
-        var cadixId = myId + "-cadix";
+        var cadixRootId = rootId + "-cadix";
         var parentNode = document.getElementById(parentId);
-        var cadixElement = document.getElementById(cadixId);
-        if (!cadixElement) {
-            console.log("Cadix create root : " + cadixId);
+        var cadixRootElement = document.getElementById(cadixRootId);
+        if (!cadixRootElement) {
+            console.log("Cadix create root : " + cadixRootId);
             //create the React mount point
-            cadixElement = document.createElement("span");
+            cadixRootElement = document.createElement("span");
             // first append, then set id
-            parentNode.appendChild(cadixElement);
-            cadixElement.setAttribute("id", cadixId);
+            parentNode.appendChild(cadixRootElement);
+            cadixRootElement.setAttribute("id", cadixRootId);
             //when we create a new Dom element cadixElement
             //we store it in cadixRoots
             var cadixTree = new CadixTree();
@@ -53,11 +53,11 @@ function cadixCreateComp(myId, parentId, rootId) {
             cadixEntry.reactKey = myId;
             cadixTree.cadixRoot = cadixEntry;
             //also store in Map (because children look me up)
-          
+
             cadixTree.cadixMap.set(jsfElement, cadixEntry);
             //TODO : properties
             //where to store cadixTree...
-            cadixRoots.set(cadixElement, cadixTree);
+            cadixRoots.set(cadixRootElement, cadixTree);
         }
     }
 
@@ -73,7 +73,9 @@ function cadixCreateComp(myId, parentId, rootId) {
         cadixTree.cadixMap.set(jsfElement, cadixEntry);
     }
 
-    //cadixEntry.reactProps = ...;
+    if (props !== null) {
+        cadixEntry.reactProps = JSON.parse(props);
+    }
 
     //if parent is in map,a dd myself to children
     var parentJsf = jsfElement.parentNode;
@@ -99,9 +101,9 @@ function cadixActivateComp(myId, parentId, rootId) {
     //following step is done for each element, including root
     var cadixRootElement = document.getElementById(rootId + "-cadix");
     var cadixTree = cadixRoots.get(cadixRootElement);
-    var cadixEntry = cadixTree.cadixMap.get(myId);
+    var cadixEntry = cadixTree.cadixMap.get(document.getElementById(myId));
 
-    
+
 
     var wasCreated = false;
     if (cadixEntry.reactElement === NOELEM) {
@@ -134,3 +136,4 @@ function createReactElement(cadixEntry, cadixTree) {
     cadixEntry.reactProps.key = cadixEntry.reactKey;
     cadixEntry.reactElement = React.createElement("div", cadixEntry.reactProps, reactChildren);
 }
+

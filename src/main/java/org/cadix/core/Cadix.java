@@ -6,12 +6,18 @@
 package org.cadix.core;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import javax.el.ValueExpression;
 import javax.faces.application.ResourceDependencies;
 import javax.faces.application.ResourceDependency;
 import javax.faces.component.FacesComponent;
 import javax.faces.component.UIComponent;
 import javax.faces.component.UIInput;
 import javax.faces.context.FacesContext;
+
+import org.json.simple.JSONValue;
 
 /**
  *
@@ -26,8 +32,6 @@ public class Cadix extends UIInput {
     public boolean getRendersChildren() {
         return Boolean.FALSE;
     }
-    
-    
 
     // 1. Check if I am a Cadix root. If not, find my root.  If not found, then become a root
     //  If I am a root, then check if the datastructure "cadixmap" is below my data node. Create if needed
@@ -51,7 +55,38 @@ public class Cadix extends UIInput {
         //this also removes the old script call
         context.getResponseWriter().startElement("span", this);
         context.getResponseWriter().writeAttribute("id", getClientId(), null);
-        cadixCall(context, "cadixCreateComp");
+
+        String props = null;
+        //collect  attributes and convert to react props
+        Map<String, Object> attributes = getAttributes();
+        Set<String> passthroughAttributes = getPassThroughAttributes(true).keySet();
+        if (attributes != null && !attributes.isEmpty()) {
+            Map<String, String> reactProps = new HashMap<>();
+            for (Map.Entry<String, Object> attribute : attributes.entrySet()) {
+                String attributeName = attribute.getKey();
+                String propName = passthroughAttributes.contains(attributeName) ? attributeName : "jsf:" + attributeName; 
+                Object attributeValue = attribute.getValue();
+                if (attributeValue != null) {
+                    String value = null;
+                    if (attributeValue instanceof ValueExpression) {
+                        Object expressionValue = ((ValueExpression) attributeValue).getValue(context.getELContext());
+                        if (expressionValue != null) {
+                            value = expressionValue.toString();
+                        }
+                    } else {
+                        value = attributeValue.toString();
+                    }
+                    if (value != null) {
+                        reactProps.put(propName, value);
+                    }
+                }
+            }
+            //convert Map to JSON , then to String
+            props = JSONValue.toJSONString(reactProps);
+
+        }
+        cadixCreateCall(context, props);
+
     }
 
     @Override
@@ -59,11 +94,30 @@ public class Cadix extends UIInput {
         //createElement if not yet done
         //setProperties otherwise
         //if root -> render if not yet exist
-        cadixCall(context, "cadixActivateComp");
+        cadixActivateCall(context);
         context.getResponseWriter().endElement("span");
     }
 
-    private void cadixCall(FacesContext context, String scriptName) throws IOException {
+    private void cadixCreateCall(FacesContext context, String props) throws IOException {
+        //check if we are a Cadix root
+        UIComponent p = this;
+        UIComponent root = null;
+        while ((p = p.getParent()) != null) {
+            if (p instanceof Cadix && root == null) {
+                //I have a Cadix parent , thus I can not be Cadix root
+                root = p;
+            }
+        }
+        context.getResponseWriter().startElement("script", this);
+        String myClientId = "\"" + getClientId() + "\"";
+        String parentId = "\"" + getParent().getClientId() + "\"";
+        String rootClientId = root == null ? myClientId : "\"" + root.getClientId() + "\"";
+        String qProps = props == null ? "null" : "\"" + JSONValue.escape(props) + "\"";
+        context.getResponseWriter().write("cadixCreateComp(" + myClientId + "," + parentId + "," + rootClientId + "," + qProps + ")");
+        context.getResponseWriter().endElement("script");
+    }
+
+    private void cadixActivateCall(FacesContext context) throws IOException {
         //check if we are a Cadix root
         UIComponent p = this;
         UIComponent root = null;
@@ -78,8 +132,7 @@ public class Cadix extends UIInput {
         String myClientId = "\"" + getClientId() + "\"";
         String parentId = "\"" + getParent().getClientId() + "\"";
         String rootClientId = root == null ? myClientId : "\"" + root.getClientId() + "\"";
-        context.getResponseWriter().write(scriptName + "(" + myClientId + "," + parentId + "," + rootClientId + ")"
-        );
+        context.getResponseWriter().write("cadixActivateComp(" + myClientId + "," + parentId + "," + rootClientId + ")");
         context.getResponseWriter().endElement("script");
     }
 
