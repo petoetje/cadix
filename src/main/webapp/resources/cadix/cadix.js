@@ -7,7 +7,8 @@ const NOELEMENTTYPE = "CadixForgotReactElementTypeAttribute";
 
 class CadixEntry {
     constructor() {
-        this.children = new Map();//ids->text or null, which means react element
+        this.children = new Array(); // ids
+        this.oldChildren = new Array(); //children of previous run
         this.reactProps = new Object();
         this.reactElement = NOELEM;
         this.reactElementType = NOELEMENTTYPE;
@@ -21,7 +22,7 @@ class CadixEntry {
 class CadixTree {
     constructor() {
         //by using a weakmap, with DOM bases keys, we are sure entries are removed in time
-        this.cadixMap = new WeakMap(); //  keys are Dom elements, corresponding to JSF id ,
+        this.cadixMap = new Map(); //  keys are JSF id ,
         //                                 values are CadixEntries which are children of other
         // elements.  Execpt root, which is kept
         //explicitly in another field
@@ -32,9 +33,9 @@ class CadixTree {
 
 
 
-function cadixCreateComp(myId, parentId, rootId, props, reactElementType, children) {
-    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + " props:" + props + " children:" + children);
-    var jsfElement = document.getElementById(myId);
+function cadixCreateComp(myId, parentId, rootId, props, reactElementType) {
+    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + " props:" + props);
+
     //if I am root, I need to create the React mount point and Cadix map, if not yet done
     if (rootId === myId) {
 
@@ -56,8 +57,7 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, childr
             cadixEntry.reactKey = myId;
             cadixTree.cadixRoot = cadixEntry;
             //also store in Map (because children look me up)
-
-            cadixTree.cadixMap.set(jsfElement, cadixEntry);
+            cadixTree.cadixMap.set(myId, cadixEntry);
             //TODO : properties
             //where to store cadixTree...
             cadixRoots.set(cadixRootElement, cadixTree);
@@ -71,23 +71,22 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, childr
 
     var cadixEntry = cadixTree.cadixMap.get(myId);
     if (!cadixEntry) {
+        console.log("New cadix entry for " + myId);
         cadixEntry = new CadixEntry();
         cadixEntry.reactKey = myId;
-        cadixTree.cadixMap.set(jsfElement, cadixEntry);
+        cadixTree.cadixMap.set(myId, cadixEntry);
     }
 
     if (props !== null) {
         cadixEntry.reactProps = JSON.parse(props);
     }
     cadixEntry.reactElementType = reactElementType;
-    //children stored in Map with fixed key order
-    var oChildren = JSON.parse(children);
-    var childMap = new Map();
-    for (var value in oChildren) {
-        console.log("key:"+value+ "/// value:"+oChildren[value]);
-        childMap.set(value, oChildren[value]);
-    }
-    cadixEntry.children = childMap;
+
+    var cadixParentEntry = cadixTree.cadixMap.get(parentId);
+
+    cadixParentEntry.children.push(myId);
+
+
     //also add our DOM input element (which is used by JSF) 
     //you can find the Form from there by element.form;
     cadixEntry.reactProps.jsfinput = document.getElementById(myId + "-input");
@@ -112,40 +111,51 @@ function cadixActivateComp(myId, parentId, rootId) {
     //following step is done for each element, including root
     var cadixRootElement = document.getElementById(rootId + "-cadix");
     var cadixTree = cadixRoots.get(cadixRootElement);
-    var cadixEntry = cadixTree.cadixMap.get(document.getElementById(myId));
+    var cadixEntry = cadixTree.cadixMap.get(myId);
+
+    //purge non-rendered children
 
 
-
-    var wasCreated = false;
     if (cadixEntry.reactElement === NOELEM) {
         //create react component
         createReactElement(cadixEntry, cadixTree);
-        wasCreated = true;
-    } else {
-        console.log("Id:" + myId + " has a react element:" + cadixEntry.reactElement);
-        //compare children
-    }
-    //if root is created, then render !
-    if (myId === rootId && wasCreated) {
-        console.log("Render time");
-        ReactDOM.render(cadixEntry.reactElement, cadixRootElement);
-    }
 
+        //if root is created, then render !
+        if (myId === rootId) {
+            console.log("Render time");
+            ReactDOM.render(cadixEntry.reactElement, cadixRootElement);
+        } else {
+            //if I am created, force re-creating my parent
+            var parentCadixEntry = cadixTree.cadixMap.get(parentId);
+            if (parentCadixEntry && parentCadixEntry.reactElement !== NOELEM) {
+                console.log("Destroying parent " + parentId);
+                parentCadixEntry.reactElement = null;
+            }
+        }
+    } else {
+        //otherwise just setProps
+        console.log("just set props id:" + myId);
+        cadixEntry.reactElement.props = cadixEntry.reactElement.props;
+
+    }
 }
 
 //create the React component for the cadixEntry
 function createReactElement(cadixEntry, cadixTree) {
-    console.log("createReactElement");
+    console.log("createReactElement cadixEntry:" + cadixEntry + " /// cadixMap:" + cadixTree.cadixMap);
     //when this function is called, all children will aready have a React comp,
     //because the same function was called by JSF before, in order children before parents
     var reactChildren = new Array();
     if (cadixEntry.children) {
         //attn : first value, then key
-        cadixEntry.children.forEach((value,ce) => {
-            if (value) {
-                reactChildren.push(value);
+        cadixEntry.children.forEach((ce) => {
+            childCadixEntry = cadixTree.cadixMap.get(ce);
+            console.log("child:" + ce);
+            if (childCadixEntry.reactElementType === "_noncadix") {
+                //use literal text (non React object)
+                reactChildren.push(childCadixEntry.reactProps.text);
             } else {
-                reactChildren.push(cadixTree.cadixMap.get(document.getElementById(ce)).reactElement);
+                reactChildren.push(childCadixEntry.reactElement);
             }
         });
     }

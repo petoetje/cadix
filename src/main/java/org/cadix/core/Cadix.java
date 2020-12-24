@@ -6,6 +6,7 @@
 package org.cadix.core;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,7 +17,9 @@ import javax.faces.application.ResourceDependency;
 import javax.faces.component.FacesComponent;
 import javax.faces.component.UIComponent;
 import javax.faces.component.UIInput;
+import javax.faces.component.UIOutput;
 import javax.faces.context.FacesContext;
+import javax.faces.context.ResponseWriter;
 import javax.faces.render.Renderer;
 
 import org.json.simple.JSONValue;
@@ -44,6 +47,8 @@ public class Cadix extends UIInput {
     @Override
     public void encodeChildren(FacesContext context) throws IOException {
 
+        //cadixcomp can only contain text nodes, or cadix comps
+        //non-Cadix comps (including text nodes) are converted to text
         if (context == null) {
             throw new NullPointerException();
         }
@@ -52,19 +57,37 @@ public class Cadix extends UIInput {
             return;
         }
 
-        if (getRendererType() != null) {
-            Renderer renderer = getRenderer(context);
-            if (renderer != null) {
-                renderer.encodeChildren(context, this);
-            }
-            // We've already logged for this component
-        } else if (getChildCount() > 0) {
+        if (getChildCount() > 0) {
             for (UIComponent child : getChildren()) {
                 //UIInstructions are converted to text by me and send this way to JavaScript
-                if (!child.getClass().getSimpleName().equals("UIInstructions")) {
+                //facelets family is stuff like ui:repeat
+                if (child instanceof Cadix || child.getFamily().equals("facelets")) {
                     child.encodeAll(context);
+                } else {
+                    //capture output of render of children
+                    ResponseWriter orgWriter = context.getResponseWriter();
+
+                    StringWriter writer = new StringWriter();
+
+                    try {
+                        context.setResponseWriter(context.getRenderKit().createResponseWriter(writer, "text/html", "UTF-8"));
+                        super.encodeChildren(context);
+                    } finally {
+                        if (orgWriter != null) {
+                            context.setResponseWriter(orgWriter);
+                        }
+                    }
+                    String output = writer.toString();
+
+                    //act as if a special Cadix comp "_noncadix"  was inserted
+                    Map<String, String> reactProps = new HashMap<>();
+                    reactProps.put("text", output);
+                    String props = JSONValue.toJSONString(reactProps);
+                    cadixCreateCall(child, context, props, "_noncadix");
+                    cadixActivateCall(child, context);
                 }
             }
+
         }
     }
 
@@ -138,18 +161,11 @@ public class Cadix extends UIInput {
             props = JSONValue.toJSONString(reactProps);
 
         }
-        //keep children in order
-        Map<String, String> children = new LinkedHashMap<>();
-        for (UIComponent child : getChildren()) {
-            if (child.getClass().getSimpleName().equals("UIInstructions")) {
-                children.put(child.getClientId(), child.toString());
-            } else {
-                children.put(child.getClientId(), null);
-            }
+        //A Cadix comp can contain non-Cadix children, but they are not renderered
+        //(see encodeChildren)
+        //they are lumped together as text
 
-        }
-
-        cadixCreateCall(context, props, reactElementType, JSONValue.toJSONString(children));
+        cadixCreateCall(this, context, props, reactElementType);
     }
 
     @Override
@@ -158,35 +174,37 @@ public class Cadix extends UIInput {
         //createElement if not yet done
         //setProperties otherwise
         //if root -> render if not yet exist
-        cadixActivateCall(context);
+        cadixActivateCall(this, context);
         context.getResponseWriter().endElement("span");
     }
 
-    private void cadixCreateCall(FacesContext context, String props, String reactElementType, String children) throws IOException {
+    private static void cadixCreateCall(UIComponent c, FacesContext context, String props, String reactElementType) throws IOException {
         //check if we are a Cadix root
 
-        UIComponent root = getRoot();
+        UIComponent root = getRoot(c);
 
-        context.getResponseWriter().startElement("script", this);
-        String myClientId = "\"" + getClientId() + "\"";
-        String parentId = "\"" + getParent().getClientId() + "\"";
+        context.getResponseWriter().startElement("script", c);
+        String myClientId = "\"" + c.getClientId() + "\"";
+        String parentId = "\"" + getOutputParent(c).getClientId() + "\"";
         String rootClientId = root == null ? myClientId : "\"" + root.getClientId() + "\"";
         String qReactElementType = Character.isUpperCase(reactElementType.charAt(0)) ? reactElementType : "\"" + reactElementType + "\"";
         String qProps = props == null ? "null" : "\"" + JSONValue.escape(props) + "\"";
-        String qChildren = children == null ? "null" : "\"" + JSONValue.escape(children) + "\"";
-        context.getResponseWriter().write("cadixCreateComp(" + myClientId + "," + parentId + "," + rootClientId + "," + qProps + "," + qReactElementType + "," + qChildren + ")");
+
+        context.getResponseWriter().write("cadixCreateComp(" + myClientId + "," + parentId + "," + rootClientId + "," + qProps + "," + qReactElementType + ")");
         context.getResponseWriter().endElement("script");
     }
 
-    private UIComponent getRoot() {
+    private static UIComponent getRoot(UIComponent p) {
         //check if we are a Cadix root
-        UIComponent p = this;
+
         UIComponent root = null;
-        if (!(p.getParent() instanceof Cadix)) {
+        UIComponent parent = getOutputParent(p);
+        if (!(parent instanceof Cadix)) {
             root = p;
         }
-        while ((p = p.getParent()) != null && root == null) {
-            if (!(p.getParent() instanceof Cadix)) {
+        while ((p = getOutputParent(p)) != null && root == null) {
+            parent = getOutputParent(p);
+            if (!(parent instanceof Cadix)) {
                 //I have a non Cadix parent , thus I am root
                 root = p;
             }
@@ -194,14 +212,23 @@ public class Cadix extends UIInput {
         return root;
     }
 
-    private void cadixActivateCall(FacesContext context) throws IOException {
+    //return the first parent which is an UIOutput
+    private static UIComponent getOutputParent(UIComponent p) {
+
+        while ((p = p.getParent()) != null && (p.getFamily().equals("facelets"))) {
+
+        }
+        return p;
+    }
+
+    private static void cadixActivateCall(UIComponent u, FacesContext context) throws IOException {
         //check if we are a Cadix root
 
-        UIComponent root = getRoot();
+        UIComponent root = getRoot(u);
 
-        context.getResponseWriter().startElement("script", this);
-        String myClientId = "\"" + getClientId() + "\"";
-        String parentId = "\"" + getParent().getClientId() + "\"";
+        context.getResponseWriter().startElement("script", u);
+        String myClientId = "\"" + u.getClientId() + "\"";
+        String parentId = "\"" + getOutputParent(u).getClientId() + "\"";
         String rootClientId = root == null ? myClientId : "\"" + root.getClientId() + "\"";
         context.getResponseWriter().write("cadixActivateComp(" + myClientId + "," + parentId + "," + rootClientId + ")");
         context.getResponseWriter().endElement("script");
