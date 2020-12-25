@@ -7,21 +7,27 @@ package org.cadix.core;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.AbstractMap;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import javax.el.ValueExpression;
 import javax.faces.application.ResourceDependencies;
 import javax.faces.application.ResourceDependency;
 import javax.faces.component.FacesComponent;
 import javax.faces.component.UIComponent;
 import javax.faces.component.UIInput;
-import javax.faces.component.UIOutput;
 import javax.faces.context.FacesContext;
 import javax.faces.context.ResponseWriter;
-import javax.faces.render.Renderer;
+import javax.el.MethodExpression;
+import javax.faces.component.ActionSource;
+import javax.faces.component.ActionSource2;
+import javax.faces.el.MethodBinding;
+import javax.faces.event.AbortProcessingException;
+import javax.faces.event.ActionEvent;
+import javax.faces.event.ActionListener;
+import javax.faces.event.FacesEvent;
+import javax.faces.event.PhaseId;
+import static javax.faces.event.PhaseId.APPLY_REQUEST_VALUES;
+import static javax.faces.event.PhaseId.INVOKE_APPLICATION;
 
 import org.json.simple.JSONValue;
 
@@ -30,12 +36,22 @@ import org.json.simple.JSONValue;
  * @author christo
  */
 @ResourceDependencies({
-    @ResourceDependency(library = "cadix", name = "cadix.js", target = "head")})
+    @ResourceDependency(library = "cadix", name = "cycle.js", target = "head"),
+    @ResourceDependency(library = "cadix", name = "cadix.js", target = "head"),
+    @ResourceDependency(library = "javax.faces", name = "jsf.js", target = "head") // Required for jsf.ajax.request.
+})
 @FacesComponent(createTag = true, tagName = "cadix")
-public class Cadix extends UIInput {
+public class Cadix extends UIInput implements ActionSource2 {
+
+    private static final String CADIXACTION = "#*#CadixAction#*#";
+
+    public static String CadixAction(String tag) {
+        return CADIXACTION + " " + tag;
+    }
 
     public Cadix() {
-        setRendererType(null);
+        super();
+        setRendererType("javax.faces.Button");//taken from Mojarra UICommand
     }
 
     @Override
@@ -80,7 +96,6 @@ public class Cadix extends UIInput {
                     }
                     String output = writer.toString();
 
-                                 
                     cadixCreateCall(child, context, null, "span", output);
                     cadixActivateCall(child, context);
                 }
@@ -163,7 +178,7 @@ public class Cadix extends UIInput {
         //(see encodeChildren)
         //they are lumped together as text
 
-        cadixCreateCall(this, context, props, reactElementType,null);
+        cadixCreateCall(this, context, props, reactElementType, null);
     }
 
     @Override
@@ -188,7 +203,7 @@ public class Cadix extends UIInput {
         String qReactElementType = Character.isUpperCase(reactElementType.charAt(0)) ? reactElementType : "\"" + reactElementType + "\"";
         String qProps = props == null ? "null" : "\"" + JSONValue.escape(props) + "\"";
         String qInner = innerHtml == null ? "null" : "\"" + JSONValue.escape(innerHtml) + "\"";
-        context.getResponseWriter().write("cadixCreateComp(" + myClientId + "," + parentId + "," + rootClientId + "," + qProps + "," + qReactElementType + "," + qInner +")");
+        context.getResponseWriter().write("cadixCreateComp(" + myClientId + "," + parentId + "," + rootClientId + "," + qProps + "," + qReactElementType + "," + qInner + ")");
         context.getResponseWriter().endElement("script");
     }
 
@@ -230,6 +245,240 @@ public class Cadix extends UIInput {
         String rootClientId = root == null ? myClientId : "\"" + root.getClientId() + "\"";
         context.getResponseWriter().write("cadixActivateComp(" + myClientId + "," + parentId + "," + rootClientId + ")");
         context.getResponseWriter().endElement("script");
+    }
+
+    //react on an actionevent. Taken from OmniFaces CommandScript
+    @Override
+    public void decode(FacesContext context) {
+       // super.decode(context);
+        String source = context.getExternalContext().getRequestParameterMap().get("javax.faces.source");
+        String cadixTag = context.getExternalContext().getRequestParameterMap().get("org.cadix.tag");
+        String cadixArgs = context.getExternalContext().getRequestParameterMap().get("org.cadix.args");
+        if (getClientId(context).equals(source)) {
+            CadixEvent event = new CadixEvent(this);
+            event.setTag(cadixTag);
+            event.setArgs(cadixArgs);
+            event.setPhaseId(isImmediate() ? PhaseId.APPLY_REQUEST_VALUES : PhaseId.INVOKE_APPLICATION);
+            queueEvent(event);
+        }
+
+    }
+
+    //taken from UICommand (Mojarra impl)
+    // ------------------------------------------------------ Manifest Constants
+    /**
+     * <p>
+     * The standard component type for this component.
+     * </p>
+     */
+    public static final String COMPONENT_TYPE = "javax.faces.Command";
+
+    /**
+     * <p>
+     * The standard component family for this component.
+     * </p>
+     */
+    public static final String COMPONENT_FAMILY = "javax.faces.Command";
+
+    /**
+     * Properties that are tracked by state saving.
+     */
+    enum PropertyKeys {
+        value, immediate, methodBindingActionListener, actionExpression,
+    }
+
+    // -------------------------------------------------------------- Properties
+    @Override
+    public String getFamily() {
+        return COMPONENT_FAMILY;
+    }
+
+    // ------------------------------------------------- ActionSource/ActionSource2 Properties
+    /**
+     * <p>
+     * The immediate flag.
+     * </p>
+     *
+     * @return
+     */
+    @Override
+    public boolean isImmediate() {
+        return (Boolean) getStateHelper().eval(PropertyKeys.immediate, false);
+    }
+
+    @Override
+    public void setImmediate(boolean immediate) {
+        getStateHelper().put(PropertyKeys.immediate, immediate);
+    }
+
+    /**
+     * <p>
+     * Returns the <code>value</code> property of the <code>UICommand</code>.
+     * This is most often rendered as a label.
+     * </p>
+     *
+     * @return The object representing the value of this component.
+     */
+    public Object getValue() {
+        return getStateHelper().eval(PropertyKeys.value);
+    }
+
+    /**
+     * <p>
+     * Sets the <code>value</code> property of the <code>UICommand</code>. This
+     * is most often rendered as a label.
+     * </p>
+     *
+     * @param value the new value
+     */
+    public void setValue(Object value) {
+        getStateHelper().put(PropertyKeys.value, value);
+    }
+
+    // ---------------------------------------------------- ActionSource / ActionSource2 Methods
+    @Override
+    public MethodExpression getActionExpression() {
+        return (MethodExpression) getStateHelper().get(PropertyKeys.actionExpression);
+    }
+
+    @Override
+    public void setActionExpression(MethodExpression actionExpression) {
+        getStateHelper().put(PropertyKeys.actionExpression, actionExpression);
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
+    @Override
+    public void addActionListener(ActionListener listener) {
+        addFacesListener(listener);
+    }
+
+    @Override
+    public ActionListener[] getActionListeners() {
+        return (ActionListener[]) getFacesListeners(ActionListener.class);
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
+    @Override
+    public void removeActionListener(ActionListener listener) {
+        removeFacesListener(listener);
+    }
+
+    // ----------------------------------------------------- UIComponent Methods
+    /**
+     * <p>
+     * In addition to to the default {@link UIComponent#broadcast} processing,
+     * pass the {@link ActionEvent} being broadcast to the method referenced by
+     * <code>actionListener</code> (if any), and to the default
+     * {@link ActionListener} registered on the
+     * {@link javax.faces.application.Application}.
+     * </p>
+     *
+     * @param event {@link FacesEvent} to be broadcast
+     *
+     * @throws AbortProcessingException Signal the JavaServer Faces
+     * implementation that no further processing on the current event should be
+     * performed
+     * @throws IllegalArgumentException if the implementation class of this
+     * {@link FacesEvent} is not supported by this component
+     * @throws NullPointerException if <code>event</code> is <code>null</code>
+     */
+    @Override
+    public void broadcast(FacesEvent event) throws AbortProcessingException {
+
+        // Perform standard superclass processing (including calling our
+        // ActionListeners)
+        super.broadcast(event);
+
+        if (event instanceof ActionEvent) {
+            FacesContext context = event.getFacesContext();
+
+            // Notify the specified action listener method (if any)
+            notifySpecifiedActionListener(context, event);
+
+            // Invoke the default ActionListener
+            ActionListener listener = context.getApplication().getActionListener();
+            if (listener != null) {
+                listener.processAction((ActionEvent) event);
+            }
+        }
+    }
+
+    /**
+     *
+     * <p>
+     * Intercept <code>queueEvent</code> and take the following action. If the
+     * event is an <code>{@link ActionEvent}</code>, obtain the
+     * <code>UIComponent</code> instance from the event. If the component is an
+     * <code>{@link ActionSource}</code> obtain the value of its "immediate"
+     * property. If it is true, mark the phaseId for the event to be
+     * <code>PhaseId.APPLY_REQUEST_VALUES</code> otherwise, mark the phaseId to
+     * be <code>PhaseId.INVOKE_APPLICATION</code>. The event must be passed on
+     * to <code>super.queueEvent()</code> before returning from this method.
+     * </p>
+     *
+     */
+    @Override
+    public void queueEvent(FacesEvent event) {
+        UIComponent component = event.getComponent();
+
+        if (event instanceof ActionEvent && component instanceof ActionSource) {
+            if (((ActionSource) component).isImmediate()) {
+                event.setPhaseId(APPLY_REQUEST_VALUES);
+            } else {
+                event.setPhaseId(INVOKE_APPLICATION);
+            }
+        }
+
+        super.queueEvent(event);
+    }
+
+    // ---------------------------------------------------------- Deprecated code
+    @Override
+    public MethodBinding getAction() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated This has been replaced by
+     * {@link #setActionExpression(javax.el.MethodExpression)}.
+     */
+    @Override
+    public void setAction(MethodBinding action) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated Use {@link #getActionListeners} instead.
+     */
+    @Override
+    public MethodBinding getActionListener() {
+        return (MethodBinding) getStateHelper().get(PropertyKeys.methodBindingActionListener);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated This has been replaced by
+     * {@link #addActionListener(javax.faces.event.ActionListener)}.
+     */
+    @Override
+    public void setActionListener(MethodBinding actionListener) {
+        getStateHelper().put(PropertyKeys.methodBindingActionListener, actionListener);
+    }
+
+    private void notifySpecifiedActionListener(FacesContext context, FacesEvent event) {
+        MethodBinding mb = getActionListener();
+        if (mb != null) {
+            mb.invoke(context, new Object[]{event});
+        }
     }
 
 }

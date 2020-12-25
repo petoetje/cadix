@@ -4,7 +4,7 @@ var cadixRoots = new WeakMap; // map DOM element to cadixRoot. When DOM element 
 const NOELEM = "noelem";
 const NOKEY = "nokey";
 const NOELEMENTTYPE = "CadixForgotReactElementTypeAttribute";
-
+const CADIXACTION = "#*#CadixAction#*#";
 
 
 class CadixEntry {
@@ -36,7 +36,7 @@ class CadixTree {
 
 
 function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerHtml) {
-    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + " props:" + props + " elementType:"+reactElementType);
+    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + " props:" + props + " elementType:" + reactElementType);
 
     //if I am root, I need to create the React mount point and Cadix map, if not yet done
     if (rootId === myId) {
@@ -81,8 +81,17 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
 
     if (props !== null) {
         cadixEntry.reactProps = JSON.parse(props);
-    } 
-    if (innerHtml != null) {
+        //replace magic values
+        for (const [key, value] of Object.entries(cadixEntry.reactProps)) {
+            console.log("Checking prop:"+key + "  value:"+value);
+            if (typeof (value) === "string" && value.startsWith(CADIXACTION)) {
+                var tag = value.split(" ", 2)[1];
+                console.log("CADIXACTION:" + tag);
+                cadixEntry.reactProps[key] = generateTriggerCadixEvent(myId, tag);
+            }
+        }
+    }
+    if (innerHtml !== null) {
         cadixEntry.reactProps.dangerouslySetInnerHTML = {__html: innerHtml};
     }
 
@@ -181,8 +190,21 @@ function createReactElement(cadixEntry, cadixTree) {
     //make sure key is set
     cadixEntry.reactProps.key = cadixEntry.reactKey;
 
- console.log("Create args: entry:"+JSON.stringify(cadixEntry));
+    console.log("Create args: entry:" + JSON.stringify(cadixEntry));
     cadixEntry.reactElement = React.createElement(cadixEntry.reactElementType, cadixEntry.reactProps, reactChildren);
 
+}
+
+//generate a function that fires a CadixEvent in the backend
+function generateTriggerCadixEvent(myId, tag) {
+    return function () {
+        var o = {};
+        o['javax.faces.behavior.event'] = 'action';
+        o.execute = ''; // execute nothing.  This is a pure React event
+        o.render = '';
+        o['org.cadix.tag'] = tag;
+        o['org.cadix.args'] = JSON.stringify(JSON.decycle(arguments));
+        jsf.ajax.request(myId, null, o);
+    };
 }
 
