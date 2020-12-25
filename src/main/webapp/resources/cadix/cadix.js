@@ -15,6 +15,7 @@ class CadixEntry {
         this.reactElement = NOELEM;
         this.reactElementType = NOELEMENTTYPE;
         this.reactKey = NOKEY;
+       
 
 
     }
@@ -35,7 +36,7 @@ class CadixTree {
 
 
 
-function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerHtml) {
+function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerHtml, execute, render) {
     console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + " props:" + props + " elementType:" + reactElementType);
 
     //if I am root, I need to create the React mount point and Cadix map, if not yet done
@@ -87,7 +88,7 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
             if (typeof (value) === "string" && value.startsWith(CADIXACTION)) {
                 var tag = value.split(" ", 2)[1];
                 console.log("CADIXACTION:" + tag);
-                cadixEntry.reactProps[key] = generateTriggerCadixEvent(myId, tag);
+                cadixEntry.reactProps[key] = generateTriggerCadixEvent(myId, tag, execute, render);
             }
         }
     }
@@ -196,12 +197,12 @@ function createReactElement(cadixEntry, cadixTree) {
 }
 
 //generate a function that fires a CadixEvent in the backend
-function generateTriggerCadixEvent(myId, tag) {
+function generateTriggerCadixEvent(myId, tag, execute, render) {
     return function () {
         var o = {};
         o['javax.faces.behavior.event'] = 'action';
-        o.execute = ''; // execute nothing.  This is a pure React event
-        o.render = '';
+        o.execute = execute; 
+        o.render = render;
         o['org.cadix.tag'] = tag;
         o['org.cadix.args'] = JSON.stringify(JSON.decycle(arguments));
         jsf.ajax.request(myId, null, o);

@@ -96,7 +96,7 @@ public class Cadix extends UIInput implements ActionSource2 {
                     }
                     String output = writer.toString();
 
-                    cadixCreateCall(child, context, null, "span", output);
+                    cadixCreateCall(child, context, null, "span", output, null, null);
                     cadixActivateCall(child, context);
                 }
             }
@@ -174,11 +174,13 @@ public class Cadix extends UIInput implements ActionSource2 {
             props = JSONValue.toJSONString(reactProps);
 
         }
+
+        String execute = resolveClientIds(context, getExecute());
+        String render = resolveClientIds(context, getRender());
         //A Cadix comp can contain non-Cadix children, but they are not renderered
         //(see encodeChildren)
         //they are lumped together as text
-
-        cadixCreateCall(this, context, props, reactElementType, null);
+        cadixCreateCall(this, context, props, reactElementType, null, execute, render);
     }
 
     @Override
@@ -191,7 +193,7 @@ public class Cadix extends UIInput implements ActionSource2 {
         context.getResponseWriter().endElement("span");
     }
 
-    private static void cadixCreateCall(UIComponent c, FacesContext context, String props, String reactElementType, String innerHtml) throws IOException {
+    private static void cadixCreateCall(UIComponent c, FacesContext context, String props, String reactElementType, String innerHtml, String execute, String render) throws IOException {
         //check if we are a Cadix root
 
         UIComponent root = getRoot(c);
@@ -203,7 +205,9 @@ public class Cadix extends UIInput implements ActionSource2 {
         String qReactElementType = Character.isUpperCase(reactElementType.charAt(0)) ? reactElementType : "\"" + reactElementType + "\"";
         String qProps = props == null ? "null" : "\"" + JSONValue.escape(props) + "\"";
         String qInner = innerHtml == null ? "null" : "\"" + JSONValue.escape(innerHtml) + "\"";
-        context.getResponseWriter().write("cadixCreateComp(" + myClientId + "," + parentId + "," + rootClientId + "," + qProps + "," + qReactElementType + "," + qInner + ")");
+        String qExecute = execute == null ? "null" : "\"" + execute + "\"";
+        String qRender = render == null ? "null" : "\"" + render + "\"";
+        context.getResponseWriter().write("cadixCreateComp(" + myClientId + "," + parentId + "," + rootClientId + "," + qProps + "," + qReactElementType + "," + qInner + "," + qExecute + "," + qRender + ")");
         context.getResponseWriter().endElement("script");
     }
 
@@ -250,7 +254,7 @@ public class Cadix extends UIInput implements ActionSource2 {
     //react on an actionevent. Taken from OmniFaces CommandScript
     @Override
     public void decode(FacesContext context) {
-       // super.decode(context);
+        // super.decode(context);
         String source = context.getExternalContext().getRequestParameterMap().get("javax.faces.source");
         String cadixTag = context.getExternalContext().getRequestParameterMap().get("org.cadix.tag");
         String cadixArgs = context.getExternalContext().getRequestParameterMap().get("org.cadix.args");
@@ -264,75 +268,11 @@ public class Cadix extends UIInput implements ActionSource2 {
 
     }
 
-    //taken from UICommand (Mojarra impl)
-    // ------------------------------------------------------ Manifest Constants
-    /**
-     * <p>
-     * The standard component type for this component.
-     * </p>
-     */
-    public static final String COMPONENT_TYPE = "javax.faces.Command";
-
-    /**
-     * <p>
-     * The standard component family for this component.
-     * </p>
-     */
-    public static final String COMPONENT_FAMILY = "javax.faces.Command";
-
     /**
      * Properties that are tracked by state saving.
      */
     enum PropertyKeys {
         value, immediate, methodBindingActionListener, actionExpression,
-    }
-
-    // -------------------------------------------------------------- Properties
-    @Override
-    public String getFamily() {
-        return COMPONENT_FAMILY;
-    }
-
-    // ------------------------------------------------- ActionSource/ActionSource2 Properties
-    /**
-     * <p>
-     * The immediate flag.
-     * </p>
-     *
-     * @return
-     */
-    @Override
-    public boolean isImmediate() {
-        return (Boolean) getStateHelper().eval(PropertyKeys.immediate, false);
-    }
-
-    @Override
-    public void setImmediate(boolean immediate) {
-        getStateHelper().put(PropertyKeys.immediate, immediate);
-    }
-
-    /**
-     * <p>
-     * Returns the <code>value</code> property of the <code>UICommand</code>.
-     * This is most often rendered as a label.
-     * </p>
-     *
-     * @return The object representing the value of this component.
-     */
-    public Object getValue() {
-        return getStateHelper().eval(PropertyKeys.value);
-    }
-
-    /**
-     * <p>
-     * Sets the <code>value</code> property of the <code>UICommand</code>. This
-     * is most often rendered as a label.
-     * </p>
-     *
-     * @param value the new value
-     */
-    public void setValue(Object value) {
-        getStateHelper().put(PropertyKeys.value, value);
     }
 
     // ---------------------------------------------------- ActionSource / ActionSource2 Methods
@@ -439,7 +379,7 @@ public class Cadix extends UIInput implements ActionSource2 {
     // ---------------------------------------------------------- Deprecated code
     @Override
     public MethodBinding getAction() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return null; // cannot throw, because this will abort 
     }
 
     /**
@@ -450,7 +390,7 @@ public class Cadix extends UIInput implements ActionSource2 {
      */
     @Override
     public void setAction(MethodBinding action) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //do nothing. cannot throw, because this will abort 
     }
 
     /**
@@ -479,6 +419,92 @@ public class Cadix extends UIInput implements ActionSource2 {
         if (mb != null) {
             mb.invoke(context, new Object[]{event});
         }
+    }
+
+    //taken from omnifaces commandscript
+    /**
+     * Returns a space separated string of client IDs to process on ajax
+     * request.
+     *
+     * @return A space separated string of client IDs to process on ajax
+     * request.
+     */
+    public String getExecute() {
+        return (String) getStateHelper().eval("execute", "@this");
+    }
+
+    /**
+     * Sets a space separated string of client IDs to process on ajax request.
+     *
+     * @param execute A space separated string of client IDs to process on ajax
+     * request.
+     */
+    public void setExecute(String execute) {
+        getStateHelper().put("execute", execute);
+    }
+
+    /**
+     * Returns a space separated string of client IDs to update on ajax
+     * response.
+     *
+     * @return A space separated string of client IDs to update on ajax
+     * response.
+     */
+    public String getRender() {
+        return (String) getStateHelper().eval("render", "@none");
+    }
+
+    /**
+     * Sets a space separated string of client IDs to update on ajax response.
+     *
+     * @param render A space separated string of client IDs to update on ajax
+     * response.
+     */
+    public void setRender(String render) {
+        getStateHelper().put("render", render);
+    }
+
+    private static final String ERROR_UNKNOWN_CLIENTID
+            = "Cadix execute/render client ID '%s' cannot be found relative to parent NamingContainer component"
+            + " with client ID '%s'.";
+
+    /**
+     * Resolve the given space separated collection of relative client IDs to
+     * absolute client IDs.
+     *
+     * @param context The faces context to work with.
+     * @param relativeClientIds The space separated collection of relative
+     * client IDs to be resolved.
+     * @return A space separated collection of absolute client IDs, or
+     * <code>null</code> if the given relative client IDs is empty.
+     */
+    protected String resolveClientIds(FacesContext context, String relativeClientIds) {
+        if (relativeClientIds == null || relativeClientIds.isEmpty()) {
+            return null;
+        }
+
+        StringBuilder absoluteClientIds = new StringBuilder();
+
+        for (String relativeClientId : relativeClientIds.split("\\s+")) {
+            if (absoluteClientIds.length() > 0) {
+                absoluteClientIds.append(' ');
+            }
+
+            if (relativeClientId.charAt(0) == '@') {
+                absoluteClientIds.append(relativeClientId);
+            } else {
+                UIComponent found = findComponent(relativeClientId);
+
+                if (found == null) {
+                    throw new IllegalArgumentException(
+                            String.format(ERROR_UNKNOWN_CLIENTID, relativeClientId, getNamingContainer().getClientId(context)));
+                }
+
+                absoluteClientIds.append(found.getClientId(context));
+            }
+        }
+
+        return absoluteClientIds.toString();
     }
 
 }
