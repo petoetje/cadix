@@ -7,6 +7,7 @@ package org.cadix.core;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -79,11 +80,8 @@ public class Cadix extends UIInput {
                     }
                     String output = writer.toString();
 
-                    //act as if a special Cadix comp "_noncadix"  was inserted
-                    Map<String, String> reactProps = new HashMap<>();
-                    reactProps.put("text", output);
-                    String props = JSONValue.toJSONString(reactProps);
-                    cadixCreateCall(child, context, props, "_noncadix");
+                                 
+                    cadixCreateCall(child, context, null, "span", output);
                     cadixActivateCall(child, context);
                 }
             }
@@ -165,7 +163,7 @@ public class Cadix extends UIInput {
         //(see encodeChildren)
         //they are lumped together as text
 
-        cadixCreateCall(this, context, props, reactElementType);
+        cadixCreateCall(this, context, props, reactElementType,null);
     }
 
     @Override
@@ -178,7 +176,7 @@ public class Cadix extends UIInput {
         context.getResponseWriter().endElement("span");
     }
 
-    private static void cadixCreateCall(UIComponent c, FacesContext context, String props, String reactElementType) throws IOException {
+    private static void cadixCreateCall(UIComponent c, FacesContext context, String props, String reactElementType, String innerHtml) throws IOException {
         //check if we are a Cadix root
 
         UIComponent root = getRoot(c);
@@ -189,8 +187,8 @@ public class Cadix extends UIInput {
         String rootClientId = root == null ? myClientId : "\"" + root.getClientId() + "\"";
         String qReactElementType = Character.isUpperCase(reactElementType.charAt(0)) ? reactElementType : "\"" + reactElementType + "\"";
         String qProps = props == null ? "null" : "\"" + JSONValue.escape(props) + "\"";
-
-        context.getResponseWriter().write("cadixCreateComp(" + myClientId + "," + parentId + "," + rootClientId + "," + qProps + "," + qReactElementType + ")");
+        String qInner = innerHtml == null ? "null" : "\"" + JSONValue.escape(innerHtml) + "\"";
+        context.getResponseWriter().write("cadixCreateComp(" + myClientId + "," + parentId + "," + rootClientId + "," + qProps + "," + qReactElementType + "," + qInner +")");
         context.getResponseWriter().endElement("script");
     }
 

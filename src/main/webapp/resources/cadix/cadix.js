@@ -5,6 +5,8 @@ const NOELEM = "noelem";
 const NOKEY = "nokey";
 const NOELEMENTTYPE = "CadixForgotReactElementTypeAttribute";
 
+
+
 class CadixEntry {
     constructor() {
         this.children = new Array(); // ids
@@ -33,8 +35,8 @@ class CadixTree {
 
 
 
-function cadixCreateComp(myId, parentId, rootId, props, reactElementType) {
-    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + " props:" + props);
+function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerHtml) {
+    console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + " props:" + props + " elementType:"+reactElementType);
 
     //if I am root, I need to create the React mount point and Cadix map, if not yet done
     if (rootId === myId) {
@@ -79,12 +81,22 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType) {
 
     if (props !== null) {
         cadixEntry.reactProps = JSON.parse(props);
+    } 
+    if (innerHtml != null) {
+        cadixEntry.reactProps.dangerouslySetInnerHTML = {__html: innerHtml};
     }
+
     cadixEntry.reactElementType = reactElementType;
 
-    var cadixParentEntry = cadixTree.cadixMap.get(parentId);
+    ///keep copy; to compate later
+    cadixEntry.oldChildren = cadixEntry.children;
+    cadixEntry.children = new Array();
 
-    cadixParentEntry.children.push(myId);
+    //update children list of parent.  This way we can detect orphans
+    if (rootId !== myId) {
+        var cadixParentEntry = cadixTree.cadixMap.get(parentId);
+        cadixParentEntry.children.push(myId);
+    }
 
 
     //also add our DOM input element (which is used by JSF) 
@@ -114,7 +126,11 @@ function cadixActivateComp(myId, parentId, rootId) {
     var cadixEntry = cadixTree.cadixMap.get(myId);
 
     //purge non-rendered children
-
+    cadixEntry.oldChildren.forEach((oc) => {
+        if (!cadixEntry.children.includes(oc)) {
+            cadixTree.cadixMap.delete(oc);
+        }
+    });
 
     if (cadixEntry.reactElement === NOELEM) {
         //create react component
@@ -145,24 +161,27 @@ function createReactElement(cadixEntry, cadixTree) {
     console.log("createReactElement cadixEntry:" + cadixEntry + " /// cadixMap:" + cadixTree.cadixMap);
     //when this function is called, all children will aready have a React comp,
     //because the same function was called by JSF before, in order children before parents
-    var reactChildren = new Array();
-    if (cadixEntry.children) {
+    var reactChildren = null;
+    if (cadixEntry.children && cadixEntry.children.length > 0) {
+        reactChildren = new Array();
         //attn : first value, then key
         cadixEntry.children.forEach((ce) => {
             childCadixEntry = cadixTree.cadixMap.get(ce);
             console.log("child:" + ce);
-            if (childCadixEntry.reactElementType === "_noncadix") {
-                //use literal text (non React object)
-                reactChildren.push(childCadixEntry.reactProps.text);
-            } else {
-                reactChildren.push(childCadixEntry.reactElement);
-            }
+            reactChildren.push(childCadixEntry.reactElement);
+            /* if (childCadixEntry.reactElementType === "_noncadix") {
+             //use literal text (non React object)
+             reactChildren.push(childCadixEntry.reactProps.text);
+             } else {
+             reactChildren.push(childCadixEntry.reactElement);
+             }*/
         });
     }
     //when we arrive here, we assume children aleady have react Ids
     //make sure key is set
     cadixEntry.reactProps.key = cadixEntry.reactKey;
 
+ console.log("Create args: entry:"+JSON.stringify(cadixEntry));
     cadixEntry.reactElement = React.createElement(cadixEntry.reactElementType, cadixEntry.reactProps, reactChildren);
 
 }

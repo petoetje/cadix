@@ -20,15 +20,7 @@
         <h:form>
             <comp:cadix id="cd">
                 <comp:cadix id="cdinner" react_elementtype="ReactBootstrap.Container" react_className="p-3" react_betty="toast" value="aha">
-                    <comp:cadix  id="jumbo" react_elementtype="ReactBootstrap.Jumbotron">
-                        <ui:repeat value="#{[1,2]}" var="x" >
-                        <comp:cadix id="repeated" react_elementtype="h1" react_className="header">
-                            TEST#{x}
-                            <h:button value="een knop"/>
-                        </comp:cadix>
-                        </ui:repeat>
-                    </comp:cadix>
-                </comp:cadix>
+                 </comp:cadix>
             </comp:cadix>
             <h:commandButton>
                 <f:ajax render="jumbo"/>
