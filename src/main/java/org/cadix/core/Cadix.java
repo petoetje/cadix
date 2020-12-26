@@ -135,7 +135,7 @@ public class Cadix extends UIInput implements ActionSource2 {
         String props = null;
         String reactElementType = "div";
         //collect  attributes and convert to react props
-        Map<String, Object> attributes = getAttributes();
+        Map<String, Object> attributes = getPassThroughAttributes();
 
         if (attributes != null && !attributes.isEmpty()) {
             Map<String, String> reactProps = new HashMap<>();

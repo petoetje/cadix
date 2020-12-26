@@ -3,7 +3,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:comp="http://xmlns.jcp.org/jsf/component"
-      xmlns:f="http://xmlns.jcp.org/jsf/core">
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
     <h:head>
         <title>Facelet Title</title>
         <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
@@ -18,9 +19,10 @@
         Hello from Facelets
         <h:form>
             <comp:cadix id="cd">
-                <comp:cadix id="cdinner" cdx_p_elementtype="ReactBootstrap.Container" cdx_p_className="p-3" cdx_p_betty="toast" value="aha">
-                    <comp:cadix  id="jumbo" cdx_p_elementtype="ReactBootstrap.Jumbotron">
-                       <comp:cadix cdx_p_elementtype="ReactBootstrap.Button" cdx_p_variant="success" cdx_a_onClick="btnclck|return allargs[0].type" actionListener="#{demo.click}" render="jumbo"/>
+                <comp:cadix id="cdinner" pt:cdx_p_elementtype="ReactBootstrap.Container" pt:cdx_p_className="p-3" value="aha">
+                    <comp:cadix  id="jumbo" pt:cdx_p_elementtype="ReactBootstrap.Jumbotron">
+                        <comp:cadix id="c1" pt:cdx_p_elementtype="ReactBootstrap.Button" pt:cdx_p_variant="success" pt:cdx_a_onClick="btnclck|return allargs[0].type" actionListener="#{demo.click}" render="jumbo"/>
+                        <comp:cadix id="c2" pt:cdx_p_elementtype="ReactBootstrap.FormControl" pt:cdx_p_placeholder="#{demo.name}" value="#{demo.name}"/>
                     </comp:cadix>
                 </comp:cadix>
             </comp:cadix>

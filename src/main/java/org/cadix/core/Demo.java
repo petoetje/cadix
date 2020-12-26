@@ -15,6 +15,20 @@ import org.json.simple.JSONValue;
 @Named
 @ViewScoped
 public class Demo implements Serializable{
+    
+    private String name = "straf";
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    
+    
+    
     public void click(ActionEvent ev) {
         CadixEvent cev =(CadixEvent) ev;
         String a2 = (String) cev.getArgs();
