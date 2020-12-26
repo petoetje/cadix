@@ -89,7 +89,6 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
                 cadixEntry.reactProps[newKey] = value;
                 delete cadixEntry.reactProps[key];
             } else if (key.startsWith("a_")) {
-                cadixEntry.reactProps[key] = null; //remove key
                 var newKey = key.substr(2); //remove a_
                 var splitpos = value.indexOf('|');
                 var split = [value.slice(0,splitpos), value.slice(splitpos+1)];
@@ -107,6 +106,14 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
                 }
 
                 cadixEntry.reactProps[newKey] = generateTriggerCadixEvent(myId, tag, func, execute, render);
+                delete cadixEntry.reactProps[key];
+            } else if (key.startsWith("f_")) {
+                var newKey = key.substr(2); //remove f_
+                var splitpos = value.indexOf('|');
+                var split = [value.slice(0,splitpos), value.slice(splitpos+1)];
+                var args = split[0];
+                var funcdef = split[1];
+                cadixEntry.reactProps[newKey] = new Function(args,funcdef);
                 delete cadixEntry.reactProps[key];
             }
         }

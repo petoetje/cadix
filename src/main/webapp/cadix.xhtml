@@ -19,10 +19,10 @@
         Hello from Facelets
         <h:form>
             <comp:cadix id="cd">
-                <comp:cadix id="cdinner" pt:cdx_p_elementtype="ReactBootstrap.Container" pt:cdx_p_className="p-3" value="aha">
-                    <comp:cadix  id="jumbo" pt:cdx_p_elementtype="ReactBootstrap.Jumbotron">
-                        <comp:cadix id="c1" pt:cdx_p_elementtype="ReactBootstrap.Button" pt:cdx_p_variant="success" pt:cdx_a_onClick="btnclck|return allargs[0].type" actionListener="#{demo.click}" render="jumbo"/>
-                        <comp:cadix id="c2" pt:cdx_p_elementtype="ReactBootstrap.FormControl" pt:cdx_p_placeholder="#{demo.name}" value="#{demo.name}"/>
+                <comp:cadix id="cdinner" pt:p_elementtype="ReactBootstrap.Container" pt:p_className="p-3" value="aha">
+                    <comp:cadix  id="jumbo" pt:p_elementtype="ReactBootstrap.Jumbotron">
+                        <comp:cadix id="c1" pt:p_elementtype="ReactBootstrap.Button" pt:p_variant="success" pt:a_onClick="btnclck|return allargs[0].type" actionListener="#{demo.click}" render="jumbo"/>
+                        <comp:cadix id="c2" pt:p_elementtype="ReactBootstrap.FormControl" pt:p_placeholder="#{demo.name}" value="#{demo.name}" pt:f_onChange="e|console.log(e)"/>
                     </comp:cadix>
                 </comp:cadix>
             </comp:cadix>

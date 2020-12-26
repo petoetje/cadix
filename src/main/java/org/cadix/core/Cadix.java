@@ -43,7 +43,6 @@ import org.json.simple.JSONValue;
 @FacesComponent(createTag = true, tagName = "cadix")
 public class Cadix extends UIInput implements ActionSource2 {
 
-    
     public Cadix() {
         super();
         setRendererType("javax.faces.Button");//taken from Mojarra UICommand
@@ -141,28 +140,26 @@ public class Cadix extends UIInput implements ActionSource2 {
             Map<String, String> reactProps = new HashMap<>();
             for (Map.Entry<String, Object> attribute : attributes.entrySet()) {
                 String attributeName = attribute.getKey();
-                if (attributeName.startsWith("cdx_") ) {
-                    String propName = attributeName.substring(4);//replace cdx_, keep a_, p_, ...
-                    Object attributeValue = attribute.getValue();
-                    if (attributeValue != null) {
-                        String value = null;
-                        if (attributeValue instanceof ValueExpression) {
-                            Object expressionValue = ((ValueExpression) attributeValue).getValue(context.getELContext());
-                            if (expressionValue != null) {
-                                value = expressionValue.toString();
-                            }
-                        } else {
-                            value = attributeValue.toString();
+                Object attributeValue = attribute.getValue();
+                if (attributeValue != null) {
+                    String value = null;
+                    if (attributeValue instanceof ValueExpression) {
+                        Object expressionValue = ((ValueExpression) attributeValue).getValue(context.getELContext());
+                        if (expressionValue != null) {
+                            value = expressionValue.toString();
                         }
-                        if (value != null) {
-                            //special attribute for type of react component
-                            if (attributeName.equals("cdx_p_elementtype")) {
-                                reactElementType = value;
-                            } else {
-                                reactProps.put(propName, value);
-                            }
+                    } else {
+                        value = attributeValue.toString();
+                    }
+                    if (value != null) {
+                        //special attribute for type of react component
+                        if (attributeName.equals("p_elementtype")) {
+                            reactElementType = value;
+                        } else {
+                            reactProps.put(attributeName, value);
                         }
                     }
+
                 }
             }
             //convert Map to JSON , then to String
