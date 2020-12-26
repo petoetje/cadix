@@ -4,7 +4,6 @@ var cadixRoots = new WeakMap; // map DOM element to cadixRoot. When DOM element 
 const NOELEM = "noelem";
 const NOKEY = "nokey";
 const NOELEMENTTYPE = "CadixForgotReactElementTypeAttribute";
-const CADIXACTION = "#*#CadixAction#*#";
 
 
 class CadixEntry {
@@ -83,12 +82,24 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
     if (props !== null) {
         cadixEntry.reactProps = JSON.parse(props);
         //replace magic values
-        for (const [key, value] of Object.entries(cadixEntry.reactProps)) {
+        for ( const[key, value] of Object.entries(cadixEntry.reactProps)) {
             console.log("Checking prop:"+key + "  value:"+value);
-            if (typeof (value) === "string" && value.startsWith(CADIXACTION)) {
-                var tag = value.split(" ", 2)[1];
+            if (key.startsWith("Action")) {
+                cadixEntry.reactProps[key] = null; //remove key
+                var newKey=key.substr(6); //remove Action
+                var split = value.split(" ", 2);
+                var tag = split[0];
+                var funcdef = split[1];
+                if (funcdef==="all") {
+                    func = (e)=>e;
+                } else if (funcdef==="none") {
+                    func = (e)=>null;
+                } else {
+                    func = new Function([arguments],func);
+                }
                 console.log("CADIXACTION:" + tag);
-                cadixEntry.reactProps[key] = generateTriggerCadixEvent(myId, tag, execute, render);
+                cadixEntry.reactProps[newKey] = generateTriggerCadixEvent(myId, tag, func,execute, render);
+                delete cadixEntry.reactProps[key];
             }
         }
     }
@@ -197,14 +208,14 @@ function createReactElement(cadixEntry, cadixTree) {
 }
 
 //generate a function that fires a CadixEvent in the backend
-function generateTriggerCadixEvent(myId, tag, execute, render) {
+function generateTriggerCadixEvent(myId, tag, func,execute, render) {
     return function () {
         var o = {};
         o['javax.faces.behavior.event'] = 'action';
         o.execute = execute; 
         o.render = render;
         o['org.cadix.tag'] = tag;
-        o['org.cadix.args'] = JSON.stringify(JSON.decycle(arguments));
+        o['org.cadix.args'] = JSON.stringify(JSON.decycle(func(arguments)));
         jsf.ajax.request(myId, null, o);
     };
 }

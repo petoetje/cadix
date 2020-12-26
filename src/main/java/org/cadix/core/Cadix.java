@@ -43,12 +43,7 @@ import org.json.simple.JSONValue;
 @FacesComponent(createTag = true, tagName = "cadix")
 public class Cadix extends UIInput implements ActionSource2 {
 
-    private static final String CADIXACTION = "#*#CadixAction#*#";
-
-    public static String CadixAction(String tag) {
-        return CADIXACTION + " " + tag;
-    }
-
+    
     public Cadix() {
         super();
         setRendererType("javax.faces.Button");//taken from Mojarra UICommand
@@ -229,7 +224,7 @@ public class Cadix extends UIInput implements ActionSource2 {
         return root;
     }
 
-    //return the first parent which is an UIOutput
+    //return the first parent which is not a facelets comp (like UIRepeat)
     private static UIComponent getOutputParent(UIComponent p) {
 
         while ((p = p.getParent()) != null && (p.getFamily().equals("facelets"))) {
