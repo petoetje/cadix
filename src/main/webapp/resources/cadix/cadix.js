@@ -14,7 +14,7 @@ class CadixEntry {
         this.reactElement = NOELEM;
         this.reactElementType = NOELEMENTTYPE;
         this.reactKey = NOKEY;
-       
+
 
 
     }
@@ -82,27 +82,36 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
     if (props !== null) {
         cadixEntry.reactProps = JSON.parse(props);
         //replace magic values
-        for ( const[key, value] of Object.entries(cadixEntry.reactProps)) {
-            console.log("Checking prop:"+key + "  value:"+value);
-            if (key.startsWith("Action")) {
+        for (const[key, value] of Object.entries(cadixEntry.reactProps)) {
+            console.log("Checking prop:" + key + "  value:" + value);
+            if (key.startsWith("p_")) {
+                var newKey = key.substr(2); //remove p_
+                cadixEntry.reactProps[newKey] = value;
+                delete cadixEntry.reactProps[key];
+            } else if (key.startsWith("a_")) {
                 cadixEntry.reactProps[key] = null; //remove key
-                var newKey=key.substr(6); //remove Action
-                var split = value.split(" ", 2);
+                var newKey = key.substr(2); //remove a_
+                var splitpos = value.indexOf('|');
+                var split = [value.slice(0,splitpos), value.slice(splitpos+1)];
                 var tag = split[0];
                 var funcdef = split[1];
-                if (funcdef==="all") {
-                    func = (e)=>e;
-                } else if (funcdef==="none") {
-                    func = (e)=>null;
+                console.log("funcdef:" + funcdef);
+                var func;
+                if (funcdef === "all") {
+                    func = (e) => e;
+                } else if (funcdef === "none") {
+                    func = (e) => null;
                 } else {
-                    func = new Function([arguments],func);
+
+                    func = new Function("allargs", funcdef);
                 }
-                console.log("CADIXACTION:" + tag);
-                cadixEntry.reactProps[newKey] = generateTriggerCadixEvent(myId, tag, func,execute, render);
+
+                cadixEntry.reactProps[newKey] = generateTriggerCadixEvent(myId, tag, func, execute, render);
                 delete cadixEntry.reactProps[key];
             }
         }
     }
+    console.log("corrected props:"+JSON.stringify(cadixEntry.reactProps));
     if (innerHtml !== null) {
         cadixEntry.reactProps.dangerouslySetInnerHTML = {__html: innerHtml};
     }
@@ -208,11 +217,11 @@ function createReactElement(cadixEntry, cadixTree) {
 }
 
 //generate a function that fires a CadixEvent in the backend
-function generateTriggerCadixEvent(myId, tag, func,execute, render) {
+function generateTriggerCadixEvent(myId, tag, func, execute, render) {
     return function () {
         var o = {};
         o['javax.faces.behavior.event'] = 'action';
-        o.execute = execute; 
+        o.execute = execute;
         o.render = render;
         o['org.cadix.tag'] = tag;
         o['org.cadix.args'] = JSON.stringify(JSON.decycle(func(arguments)));

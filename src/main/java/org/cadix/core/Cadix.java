@@ -141,8 +141,8 @@ public class Cadix extends UIInput implements ActionSource2 {
             Map<String, String> reactProps = new HashMap<>();
             for (Map.Entry<String, Object> attribute : attributes.entrySet()) {
                 String attributeName = attribute.getKey();
-                if (attributeName.startsWith("react_")) {
-                    String propName = attributeName.substring(6);
+                if (attributeName.startsWith("cdx_") ) {
+                    String propName = attributeName.substring(4);//replace cdx_, keep a_, p_, ...
                     Object attributeValue = attribute.getValue();
                     if (attributeValue != null) {
                         String value = null;
@@ -156,7 +156,7 @@ public class Cadix extends UIInput implements ActionSource2 {
                         }
                         if (value != null) {
                             //special attribute for type of react component
-                            if (attributeName.equals("react_elementtype")) {
+                            if (attributeName.equals("cdx_p_elementtype")) {
                                 reactElementType = value;
                             } else {
                                 reactProps.put(propName, value);
@@ -256,7 +256,7 @@ public class Cadix extends UIInput implements ActionSource2 {
         if (getClientId(context).equals(source)) {
             CadixEvent event = new CadixEvent(this);
             event.setTag(cadixTag);
-            event.setArgs(cadixArgs);
+            event.setRawArgs(cadixArgs);
             event.setPhaseId(isImmediate() ? PhaseId.APPLY_REQUEST_VALUES : PhaseId.INVOKE_APPLICATION);
             queueEvent(event);
         }

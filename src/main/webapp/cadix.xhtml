@@ -3,8 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:comp="http://xmlns.jcp.org/jsf/component"
-      xmlns:f="http://xmlns.jcp.org/jsf/core"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
     <h:head>
         <title>Facelet Title</title>
         <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
@@ -19,9 +18,9 @@
         Hello from Facelets
         <h:form>
             <comp:cadix id="cd">
-                <comp:cadix id="cdinner" react_elementtype="ReactBootstrap.Container" react_className="p-3" react_betty="toast" value="aha">
-                    <comp:cadix  id="jumbo" react_elementtype="ReactBootstrap.Jumbotron">
-                       <comp:cadix react_elementtype="ReactBootstrap.Button" react_variant="success" react_ActiononClick="btnclck all" actionListener="#{demo.click}" render="jumbo"/>
+                <comp:cadix id="cdinner" cdx_p_elementtype="ReactBootstrap.Container" cdx_p_className="p-3" cdx_p_betty="toast" value="aha">
+                    <comp:cadix  id="jumbo" cdx_p_elementtype="ReactBootstrap.Jumbotron">
+                       <comp:cadix cdx_p_elementtype="ReactBootstrap.Button" cdx_p_variant="success" cdx_a_onClick="btnclck|return allargs[0].type" actionListener="#{demo.click}" render="jumbo"/>
                     </comp:cadix>
                 </comp:cadix>
             </comp:cadix>

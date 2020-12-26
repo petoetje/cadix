@@ -17,7 +17,7 @@ import org.json.simple.JSONValue;
 public class Demo implements Serializable{
     public void click(ActionEvent ev) {
         CadixEvent cev =(CadixEvent) ev;
-        String a2 = cev.getArgs();
+        String a2 = (String) cev.getArgs();
         Object a3 = JSONValue.parse(a2);
         String a4 = cev.getTag();
     }

@@ -7,6 +7,7 @@ package org.cadix.core;
 
 import javax.faces.component.UIComponent;
 import javax.faces.event.ActionEvent;
+import org.json.simple.JSONValue;
 
 /**
  *
@@ -21,7 +22,7 @@ public class CadixEvent extends ActionEvent {
     // tag : provided by JavaScript caller. Useful to find out who called
     private String tag;
     // JSON repr of all arguments of the called JavaScript function
-    private String args;
+    private String rawArgs;
 
     public String getTag() {
         return tag;
@@ -31,12 +32,16 @@ public class CadixEvent extends ActionEvent {
         this.tag = tag;
     }
 
-    public String getArgs() {
-        return args;
+    public String getRawArgs() {
+        return rawArgs;
+    }
+    
+    public Object getArgs() {
+        return JSONValue.parse(getRawArgs());
     }
 
-    public void setArgs(String args) {
-        this.args = args;
+    public void setRawArgs(String args) {
+        this.rawArgs = args;
     }
     
         
