@@ -125,6 +125,11 @@ public class Cadix extends UIInput implements ActionSource2 {
         // - which has name "clientid"
         // - participates in POST
         // - has a value, as used by JSF
+        //Strange : passThroughAttributes are written to DOM, by the following code
+        //But we don't want them for the input element
+        //So remove them first, then re-add them after input elem is written
+        Map<String, Object> orgAttributes = new HashMap(getPassThroughAttributes());
+        getPassThroughAttributes().clear();
         context.getResponseWriter().startElement("input", this);
         context.getResponseWriter().writeAttribute("id", getClientId() + "-input", null);
         context.getResponseWriter().writeAttribute("name", getClientId(), null);
@@ -134,8 +139,8 @@ public class Cadix extends UIInput implements ActionSource2 {
         String props = null;
         String reactElementType = "div";
         //collect  attributes and convert to react props
-        Map<String, Object> attributes = getPassThroughAttributes();
-
+        getPassThroughAttributes().putAll(orgAttributes);
+        Map<String, Object> attributes =  getPassThroughAttributes();
         if (attributes != null && !attributes.isEmpty()) {
             Map<String, String> reactProps = new HashMap<>();
             for (Map.Entry<String, Object> attribute : attributes.entrySet()) {
@@ -249,11 +254,11 @@ public class Cadix extends UIInput implements ActionSource2 {
         // super.decode(context);
         String source = context.getExternalContext().getRequestParameterMap().get("javax.faces.source");
         String cadixTag = context.getExternalContext().getRequestParameterMap().get("org.cadix.tag");
-        String cadixArgs = context.getExternalContext().getRequestParameterMap().get("org.cadix.args");
+        String cadixOutput = context.getExternalContext().getRequestParameterMap().get("org.cadix.output");
         if (getClientId(context).equals(source)) {
             CadixEvent event = new CadixEvent(this);
             event.setTag(cadixTag);
-            event.setRawArgs(cadixArgs);
+            event.setRawOutput(cadixOutput);
             event.setPhaseId(isImmediate() ? PhaseId.APPLY_REQUEST_VALUES : PhaseId.INVOKE_APPLICATION);
             queueEvent(event);
         }

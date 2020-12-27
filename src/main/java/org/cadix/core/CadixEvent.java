@@ -22,7 +22,7 @@ public class CadixEvent extends ActionEvent {
     // tag : provided by JavaScript caller. Useful to find out who called
     private String tag;
     // JSON repr of all arguments of the called JavaScript function
-    private String rawArgs;
+    private String rawOutput;
 
     public String getTag() {
         return tag;
@@ -32,16 +32,16 @@ public class CadixEvent extends ActionEvent {
         this.tag = tag;
     }
 
-    public String getRawArgs() {
-        return rawArgs;
+    public String getRawOutput() {
+        return rawOutput;
     }
     
-    public Object getArgs() {
-        return JSONValue.parse(getRawArgs());
+    public Object getOutput() {
+        return JSONValue.parse(getRawOutput());
     }
 
-    public void setRawArgs(String args) {
-        this.rawArgs = args;
+    public void setRawOutput(String args) {
+        this.rawOutput = args;
     }
     
         

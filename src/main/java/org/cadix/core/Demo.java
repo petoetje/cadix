@@ -31,7 +31,7 @@ public class Demo implements Serializable{
     
     public void click(ActionEvent ev) {
         CadixEvent cev =(CadixEvent) ev;
-        String a2 = (String) cev.getArgs();
+        String a2 = (String) cev.getOutput();
         Object a3 = JSONValue.parse(a2);
         String a4 = cev.getTag();
     }
