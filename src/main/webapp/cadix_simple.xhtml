@@ -2,9 +2,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:comp="http://xmlns.jcp.org/jsf/component"
       xmlns:f="http://xmlns.jcp.org/jsf/core"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+     >
     <h:head>
         <title>Facelet Title</title>
         <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
@@ -18,13 +17,12 @@
 
         Hello from Facelets
         <h:form>
-            <comp:cadix id="cd">
-                <comp:cadix id="cdinner" react_elementtype="ReactBootstrap.Container" react_className="p-3" react_betty="toast" value="aha">
-                 </comp:cadix>
-            </comp:cadix>
-            <h:commandButton>
-                <f:ajax render="jumbo"/>
-            </h:commandButton>
+
+           
+            <h:outputText value="T E S T"/>
+            <h:inputText value="#{demo.txt}" />
+            <h:commandButton  type="submit"/>
+           
         </h:form>
     </h:body>
 </html>

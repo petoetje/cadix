@@ -1,34 +1,35 @@
-<?xml version='1.0' encoding='UTF-8' ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:comp="http://xmlns.jcp.org/jsf/component"
-      xmlns:f="http://xmlns.jcp.org/jsf/core"
-      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+      xmlns:h="jakarta.faces.html"
+      xmlns:comp="jakarta.faces.component"
+      xmlns:pt="jakarta.faces.passthrough"
+      xmlns:f="jakarta.faces.core">
+
     <h:head>
         <title>Facelet Title</title>
         <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
-        <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-        <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
         <script src="https://unpkg.com/react-bootstrap@next/dist/react-bootstrap.min.js"></script>
-        <link   rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-                />
+        <link   rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" />
     </h:head>
     <h:body>
 
         Hello from Facelets
         <h:form>
+
             <comp:cadix id="cd">
-                <comp:cadix id="cdinner" pt:p_elementtype="ReactBootstrap.Container" pt:p_className="p-3" value="aha">
-                    <comp:cadix  id="jumbo" pt:p_elementtype="ReactBootstrap.Jumbotron">
-                        <comp:cadix id="c1" pt:p_elementtype="ReactBootstrap.Button" pt:p_variant="success" pt:a_onClick="btnclck|e|console.log(e);return e.type" actionListener="#{demo.click}" render="jumbo"/>
-                        <comp:cadix id="c2" pt:p_elementtype="ReactBootstrap.FormControl" pt:p_placeholder="#{demo.name}" value="#{demo.name}" pt:f_onChange="e|console.log(e.target.value); this.jsf.setValue(e.target.value)"/>
-                    </comp:cadix>
+                <comp:cadix id="cdinner" pt:p_elementtype="ReactBootstrap.Form" pt:p_className="p-3" value="aha">
+
+                    <comp:cadix id="c1" pt:p_elementtype="ReactBootstrap.Button" pt:p_variant="success" pt:a_onClick="btnclck|e|console.log(e);return e.type" f:actionListener="#{demo.click}" render="c2"/>
+                    <comp:cadix id="c2" pt:p_elementtype="ReactBootstrap.FormControl" pt:p_placeholder="#{demo.name}" pt:defaultValue="#{demo.name}"  pt:p_value="#{demo.name}" pt:f_onChange="e|this.jsf.setValue(e.target.value)"/>
+
                 </comp:cadix>
             </comp:cadix>
-            <h:commandButton>
-                <f:ajax render="jumbo"/>
-            </h:commandButton>
+            <h:outputText value="T E S T"/>
+            <h:inputText value="#{demo.txt}" />
+            <h:commandButton  type="submit"/>
+
         </h:form>
     </h:body>
 </html>

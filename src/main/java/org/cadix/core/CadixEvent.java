@@ -5,8 +5,8 @@
  */
 package org.cadix.core;
 
-import javax.faces.component.UIComponent;
-import javax.faces.event.ActionEvent;
+import jakarta.faces.component.UIComponent;
+import jakarta.faces.event.ActionEvent;
 import org.json.simple.JSONValue;
 
 /**
