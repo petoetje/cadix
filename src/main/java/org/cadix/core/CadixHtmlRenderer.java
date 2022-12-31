@@ -117,16 +117,16 @@ public class CadixHtmlRenderer extends HtmlBasicInputRenderer {
         component.getPassThroughAttributes().putAll(orgAttributes);
         Map<String, Object> attributes = component.getPassThroughAttributes();
         if (attributes != null && !attributes.isEmpty()) {
-            Map<String, String> reactProps = new HashMap<>();
+            Map<String, Object> reactProps = new HashMap<>();
             for (Map.Entry<String, Object> attribute : attributes.entrySet()) {
                 String attributeName = attribute.getKey();
                 Object attributeValue = attribute.getValue();
                 if (attributeValue != null) {
-                    String value = null;
+                    Object value = null;
                     if (attributeValue instanceof ValueExpression) {
                         Object expressionValue = ((ValueExpression) attributeValue).getValue(context.getELContext());
                         if (expressionValue != null) {
-                            value = expressionValue.toString();
+                            value = expressionValue;
                         }
                     } else {
                         value = attributeValue.toString();
@@ -134,7 +134,7 @@ public class CadixHtmlRenderer extends HtmlBasicInputRenderer {
                     if (value != null) {
                         //special attribute for type of react component
                         if (attributeName.equals("p_elementtype")) {
-                            reactElementType = value;
+                            reactElementType = value.toString();
                         } else {
                             reactProps.put(attributeName, value);
                         }

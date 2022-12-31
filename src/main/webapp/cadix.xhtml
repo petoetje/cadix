@@ -12,6 +12,7 @@
         <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
         <script src="https://unpkg.com/react-bootstrap@next/dist/react-bootstrap.min.js"></script>
         <link   rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" />
+        <script src="https://unpkg.com/react-minimal-pie-chart@8.4.0/dist/index.js"></script>
     </h:head>
     <h:body>
 
@@ -22,10 +23,20 @@
                 <comp:cadix id="cdinner" pt:p_elementtype="ReactBootstrap.Form" pt:p_className="p-3" value="aha">
 
                     <comp:cadix id="c1" pt:p_elementtype="ReactBootstrap.Button" pt:p_variant="success" pt:a_onClick="btnclck|e|console.log(e);return e.type" f:actionListener="#{demo.click}" render="c2"/>
-                    <comp:cadix id="c2" pt:p_elementtype="ReactBootstrap.FormControl" pt:p_placeholder="#{demo.name}" pt:defaultValue="#{demo.name}"  pt:p_value="#{demo.name}" pt:f_onChange="e|this.jsf.setValue(e.target.value)"/>
+                    <comp:cadix id="c2" pt:p_elementtype="ReactBootstrap.FormControl" pt:p_placeholder="#{demo.name}"  pt:p_value="#{demo.name}" value="#{demo.name}" pt:f_onChange="e|this.jsf.setValue(e.target.value);this.jsf.submitForm()"/>
 
                 </comp:cadix>
             </comp:cadix>
+            <h:panelGroup  id="sizer" layout="block" style="width:20em">
+                <comp:cadix id="graph">
+                    <comp:cadix id="g1" pt:p_elementtype="ReactMinimalPieChart.PieChart" pt:p_data="#{[
+                                                                                              { 'title': 'One', 'value': 10, 'color': '#E38627' },
+                                                                                              { 'title': 'Two', 'value': 15, 'color': '#C13C37' },
+                                                                                              { 'title': 'Three', 'value': 20, 'color': '#6A2135' }
+                                                                                              ]}"/>
+                </comp:cadix>
+            </h:panelGroup>
+
             <h:outputText value="T E S T"/>
             <h:inputText value="#{demo.txt}" />
             <h:commandButton  type="submit"/>

@@ -14,7 +14,7 @@ class CadixEntry {
         this.reactElement = NOELEM;
         this.reactElementType = NOELEMENTTYPE;
         this.reactKey = NOKEY;
-        this.updateFun = null;//function to udate CadixWrapperState (and re-render wrapped comp)
+        this.updateFun = null; //function to udate CadixWrapperState (and re-render wrapped comp)
         this._jsf = Object(); //will contain JSF interop functions
     }
 
@@ -30,7 +30,7 @@ class CadixEntry {
 
 class CadixTree {
     constructor() {
-        //by using a weakmap, with DOM bases keys, we are sure entries are removed in time
+//by using a weakmap, with DOM bases keys, we are sure entries are removed in time
         this.cadixMap = new Map(); //  keys are JSF id ,
         //                                 values are CadixEntries which are children of other
         // elements.  Execpt root, which is kept
@@ -51,19 +51,15 @@ function registerUpdateFunction(cadixTree, jsfId, fun) {
 
 // wrapper arounf React component, to be able to re-render it with new prop or children
 function CadixReactWrapper(props) {
-    // React.createElement(cadixEntry.reactElementType, cadixEntry.reactProps, reactChildren);
+// React.createElement(cadixEntry.reactElementType, cadixEntry.reactProps, reactChildren);
     const [fullState, setFullState] = React.useState(props);
-
     props.registerUpdateFun(props.cadixTree, props.cadixEntry.reactKey, setFullState);
-
     newKey = props.cadixEntry.reactKey + "X";
-
     return React.createElement(fullState.cadixEntry.reactElementType, {...fullState.cadixEntry.reactProps, key: newKey}, fullState.reactChildren);
 }
 
 function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerHtml, execute, render) {
     console.log("Cadix myId:" + myId + " parent:" + parentId + " root:" + rootId + " props:" + props + " elementType:" + reactElementType);
-
     //if I am root, I need to create the React mount point and Cadix map, if not yet done
     if (rootId === myId) {
 
@@ -92,11 +88,10 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
         }
     }
 
-    // at this point root exists and is initialized
-    //following step is done for each element, including root
+// at this point root exists and is initialized
+//following step is done for each element, including root
     var cadixRootElement = document.getElementById(rootId + "-cadix");
     var cadixTree = cadixRoots.get(cadixRootElement);
-
     var cadixEntry = cadixTree.cadixMap.get(myId);
     if (!cadixEntry) {
         console.log("New cadix entry for " + myId);
@@ -114,7 +109,7 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
                 var newKey = key.substr(2); //remove p_
                 cadixEntry.reactProps[newKey] = value;
                 delete cadixEntry.reactProps[key];
-            } else if (key.startsWith("a_")) {
+            }  else if (key.startsWith("a_")) {
                 var newKey = key.substr(2); //remove a_
                 var splitpos = value.indexOf('|');
                 var split = [value.slice(0, splitpos), value.slice(splitpos + 1)];
@@ -150,11 +145,9 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
 
 
     cadixEntry.reactElementType = reactElementType;
-
     ///keep copy; to compate later
     cadixEntry.oldChildren = cadixEntry.children;
     cadixEntry.children = new Array();
-
     //update children list of parent.  This way we can detect orphans
     if (rootId !== myId) {
         var cadixParentEntry = cadixTree.cadixMap.get(parentId);
@@ -179,25 +172,21 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
 //check dangling, trigger rerender if set of childs different
 function cadixActivateComp(myId, parentId, rootId) {
     console.log("Cadix Activate myId:" + myId + " parent:" + parentId + " root:" + rootId);
-
     //check if already a React component
     // at this point root exists and is initialized
     //following step is done for each element, including root
     var cadixRootElement = document.getElementById(rootId + "-cadix");
     var cadixTree = cadixRoots.get(cadixRootElement);
     var cadixEntry = cadixTree.cadixMap.get(myId);
-
     //purge non-rendered children
     cadixEntry.oldChildren.forEach((oc) => {
         if (!cadixEntry.children.includes(oc)) {
             cadixTree.cadixMap.delete(oc);
         }
     });
-
     if (cadixEntry.reactElement === NOELEM) {
-        //create react component
+//create react component
         createReactElement(myId, cadixEntry, cadixTree);
-
         //if root is created, then render !
         if (myId === rootId) {
             console.log("Render time");
@@ -205,7 +194,7 @@ function cadixActivateComp(myId, parentId, rootId) {
             cadixTree.reactRoot = root;
             root.render(cadixEntry.reactElement);
         } else {
-            //if I am created, force re-creating my parent
+//if I am created, force re-creating my parent
             var parentCadixEntry = cadixTree.cadixMap.get(parentId);
             if (parentCadixEntry && parentCadixEntry.reactElement !== NOELEM) {
                 console.log("Destroying parent " + parentId);
@@ -214,7 +203,7 @@ function cadixActivateComp(myId, parentId, rootId) {
         }
     } else {
 
-        //otherwise force a re-render with updated props
+//otherwise force a re-render with updated props
         console.log("just set props id:" + myId);
         //cadixEntry.reactElement.props = cadixEntry.reactProps;   
         // createReactElement(myId, cadixEntry, cadixTree);
@@ -252,15 +241,13 @@ function createReactElement(myId, cadixEntry, cadixTree) {
              }*/
         });
     }
-    //when we arrive here, we assume children aleady have react Ids
-    //make sure key is set
+//when we arrive here, we assume children aleady have react Ids
+//make sure key is set
     cadixEntry.reactProps.key = cadixEntry.reactKey;
-
     console.log("Create args: entry:" + JSON.stringify(JSON.decycle(cadixEntry)));
-
     if (cadixEntry.reactElement === NOELEM) {
 
-        // cadixEntry.reactElement = React.createElement(cadixEntry.reactElementType, cadixEntry.reactProps, reactChildren);
+// cadixEntry.reactElement = React.createElement(cadixEntry.reactElementType, cadixEntry.reactProps, reactChildren);
         cadixEntry.reactElement = React.createElement(CadixReactWrapper, {"key": cadixEntry.reactProps.key, "cadixTree": cadixTree, "cadixEntry": cadixEntry, "reactChildren": reactChildren, "registerUpdateFun": registerUpdateFunction});
         //cadixEntry.reactElement = CadixReactWrapper(cadixEntry, reactChildren);
 
