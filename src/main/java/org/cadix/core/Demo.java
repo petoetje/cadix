@@ -51,4 +51,14 @@ public class Demo implements Serializable{
         String a4 = cev.getTag();
         setName( (new Date()).toString() );
     }
+    
+    private Integer one=10;
+
+    public Integer getOne() {
+        return one;
+    }
+    
+    public void inc(CadixEvent ev) {
+        one++;
+    }
 }

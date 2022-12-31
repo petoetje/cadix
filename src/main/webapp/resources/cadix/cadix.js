@@ -131,7 +131,7 @@ function cadixCreateComp(myId, parentId, rootId, props, reactElementType, innerH
                 var funcdef = split[1];
                 cadixEntry.reactProps[newKey] = function () {
                     var inner = new Function(args, funcdef);
-                    inner.apply(cadixEntry, arguments);
+                    return inner.apply(cadixEntry, arguments);
                 };
                 delete cadixEntry.reactProps[key];
             }

@@ -29,11 +29,12 @@
             </comp:cadix>
             <h:panelGroup  id="sizer" layout="block" style="width:20em">
                 <comp:cadix id="graph">
-                    <comp:cadix id="g1" pt:p_elementtype="ReactMinimalPieChart.PieChart" pt:p_data="#{[
-                                                                                              { 'title': 'One', 'value': 10, 'color': '#E38627' },
+                    <comp:cadix id="g1" pt:p_elementtype="ReactMinimalPieChart.PieChart" pt:p_labelStyle="#{{'fontSize':'5px','fontFamily': 'sans-serif'}}" pt:f_label="seg|console.log(seg.dataEntry.value);return seg.dataEntry.value;"   pt:p_data="#{[
+                                                                                              { 'title': 'One', 'value': demo.one, 'color': '#E38627' },
                                                                                               { 'title': 'Two', 'value': 15, 'color': '#C13C37' },
                                                                                               { 'title': 'Three', 'value': 20, 'color': '#6A2135' }
                                                                                               ]}"/>
+                     <comp:cadix id="g2" pt:p_elementtype="ReactBootstrap.Button" pt:p_variant="success" pt:a_onClick="btnclck|e|console.log(e);return e.type" f:actionListener="#{demo.inc}" render="g1"/>
                 </comp:cadix>
             </h:panelGroup>
 
