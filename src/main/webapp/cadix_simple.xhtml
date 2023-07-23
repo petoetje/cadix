@@ -1,29 +1,40 @@
-<?xml version='1.0' encoding='UTF-8' ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:f="http://xmlns.jcp.org/jsf/core"
-     >
+      xmlns:h="jakarta.faces.html"
+      xmlns:comp="jakarta.faces.component"
+      xmlns:pt="jakarta.faces.passthrough"
+      xmlns:f="jakarta.faces.core">
+
     <h:head>
         <title>Facelet Title</title>
         <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
-        <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-        <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-        <script src="https://unpkg.com/react-bootstrap@next/dist/react-bootstrap.min.js"></script>
-        <link   rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-                />
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/recoil@0.7.7/umd/index.js"/>
     </h:head>
     <h:body>
 
-        Hello from Facelets
+        <div id="rr"/>
         <h:form>
-
-           
-            <h:outputText value="T E S T"/>
-            <h:inputText value="#{demo.txt}" />
-            <h:commandButton  type="submit"/>
-           
+            <comp:mappixHolder name="blues"> 
+                <comp:mappix value="x" id="frank"/>
+            </comp:mappixHolder>
         </h:form>
+        <script type="text/babel">
+            //<![CDATA[
+            function Text() {
+             const [gblues, setBlues] = Recoil.useRecoilState(blues);
+             console.log(gblues);
+             g1=gblues[0];
+             return<p> {{g1}}This text will increase in size too.</p>;
+             };
+             
+             const domContainer = document.querySelector('#rr');
+             const root = ReactDOM.createRoot(domContainer);
+           //  root.render(React.createElement(Recoil.RecoilRoot,<Text/>));
+           root.render(<Recoil.RecoilRoot><Text/></Recoil.RecoilRoot>);
+            //]]>
+        </script>
     </h:body>
 </html>
 
