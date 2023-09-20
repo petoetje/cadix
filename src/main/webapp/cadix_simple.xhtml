@@ -10,29 +10,35 @@
         <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
         <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
         <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/recoil@0.7.7/umd/index.js"/>
+
     </h:head>
     <h:body>
 
         <div id="rr"/>
         <h:form>
-            <comp:mappixHolder name="blues"> 
-                <comp:mappix value="x" id="frank"/>
+            <comp:mappixHolder id="mh" name="blues"> 
+                <comp:mappix value="#{demo.txt}" id="frank"/>
             </comp:mappixHolder>
+            <h:inputText value="#{demo.txt}" />
+            <h:commandButton  type="submit">
+                 <f:ajax execute="@form" render="mh" />
+            </h:commandButton>
         </h:form>
         <script type="text/babel">
             //<![CDATA[
             function Text() {
-             const [gblues, setBlues] = Recoil.useRecoilState(blues);
-             console.log(gblues);
-             g1=gblues[0];
-             return<p> {{g1}}This text will increase in size too.</p>;
-             };
-             
-             const domContainer = document.querySelector('#rr');
-             const root = ReactDOM.createRoot(domContainer);
-           //  root.render(React.createElement(Recoil.RecoilRoot,<Text/>));
-           root.render(<Recoil.RecoilRoot><Text/></Recoil.RecoilRoot>);
+                const [gblues, setBlues] = React.useState(mappixGet('blues') || '' );
+                wobs.subscribe('blues',function(u){setBlues(mappixGet('blues'))});
+                console.log(gblues);
+                var g1 = gblues[0];
+                return<p> {g1}This text will increase in size too.</p>;
+            }
+            ;
+
+            const domContainer = document.querySelector('#rr');
+            const root = ReactDOM.createRoot(domContainer);
+            //  root.render(React.createElement(Recoil.RecoilRoot,<Text/>));
+            root.render(<Text/>);
             //]]>
         </script>
     </h:body>
